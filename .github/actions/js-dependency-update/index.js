@@ -50,7 +50,7 @@ async function run() {
 
     if (!validateBranchName({ branchName: headBranch })) {
         core.setFailed(
-        'Invalid head-branch name. Branch names should include only characters, numbers, hyphens, underscores, dots, and forward slashes.'
+            'Invalid head-branch name. Branch names should include only characters, numbers, hyphens, underscores, dots, and forward slashes.'
     );
       return;
   }
@@ -79,7 +79,11 @@ async function run() {
         }
     );
 
+    let updatesAvailable = false;
+
     if (gitStatus.stdout.length > 0) {
+      updatesAvailable = true;
+
       logger.debug('There are updates available!');
       logger.debug('Setting up git');
       await setupGit();
@@ -102,7 +106,7 @@ async function run() {
       const octokit = github.getOctokit(ghToken);
 
       try {
-        logger.debug(`Creating PR using head branch ${headBranch}`);
+          logger.debug(`Creating PR using head branch ${headBranch}`);
 
         await octokit.rest.pulls.create({
             owner: github.context.repo.owner,
@@ -110,18 +114,21 @@ async function run() {
             title: `Update NPM dependencies`,
             body: `This pull request updates NPM packages`,
             base: baseBranch,
-          head: headBranch,
+            head: headBranch,
       });
     } catch (e) {
         logger.error(
             'Something went wrong while creating the PR. Check logs below.'
         );
         core.setFailed(e.message);
-          logger.error(e);
-      }
+        logger.error(e);
+    }
   } else {
       logger.info('No updates at this point in time.');
   }
+
+    logger.debug(`Setting updates-available output to ${updatesAvailable}`);
+    core.setOutput('updates-available', updatesAvailable);
 }
 
 run();
